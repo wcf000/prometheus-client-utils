@@ -10,15 +10,13 @@ from prometheus_client import Counter, Gauge, Histogram
 REQUEST_COUNT = Counter(
     'http_requests_total',
     'Total HTTP Requests',
-    ['method', 'status'],
-    max_size=100
+    ['method', 'status']
 )
 
 REQUEST_LATENCY = Histogram(
     'http_request_duration_seconds',
     'HTTP request latency',
-    ['method', 'endpoint'],
-    max_size=50
+    ['method', 'endpoint']
 )
 
 # Celery metrics
