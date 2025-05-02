@@ -1,0 +1,37 @@
+groups:
+  - name: fastapi_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.01
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on {{ $labels.endpoint }}"
+          description: "Error rate is above 1% for {{ $labels.endpoint }} (current value: {{ $value }})"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, endpoint)) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on {{ $labels.endpoint }}"
+          description: "P99 latency exceeds 1s for {{ $labels.endpoint }} (current value: {{ $value }})"
+
+  - name: http_errors
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.01
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected on {{ $labels.instance }}"
+          description: "Error rate {{ $value }} exceeds 1% threshold"
+
+      - alert: ElevatedErrorRate
+        expr: rate(http_requests_total{status=~"4.."}[5m]) > 0.05
+        for: 15m
+        labels:
+          severity: warning

@@ -1,0 +1,14 @@
+groups:
+- name: credits
+  rules:
+  - record: credits_used_total
+    expr: sum by (user_id, credit_type) (credits_used)
+  - record: credits_remaining
+    expr: credits_allotted - credits_used_total
+  - alert: LowCredits
+    expr: credits_remaining < 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "User {{ $labels.user_id }} low on {{ $labels.credit_type }} credits"

@@ -1,0 +1,47 @@
+groups:
+  - name: redis_alerts
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis instance is down"
+          description: "Redis has been down for more than 1 minute"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage is high ({{ $value }}%)"
+          description: "Redis memory usage is over 80% for 15 minutes"
+
+      - alert: RedisHighLatency
+        expr: rate(redis_commands_duration_seconds_sum[1m]) / rate(redis_commands_duration_seconds_count[1m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis command latency is high"
+          description: "Average Redis command latency is over 100ms for 10 minutes"
+
+      - alert: RedisConnectionLimit
+        expr: redis_connected_clients / redis_maxclients > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis connection limit approaching"
+          description: "Redis client connections are over 90% of max capacity"
+
+      - alert: RedisReplicationLag
+        expr: redis_slave_repl_offset - redis_master_repl_offset > 1000000
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis replication lag detected"
+          description: "Redis slave is lagging behind master by {{ $value }} operations"

@@ -1,0 +1,85 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  scrape_limit_size: 10MB
+  scrape_limit_samples: 5000
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - "rules/*.yml"
+  - "rules/pulsar_alerts.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    scheme: https
+    tls_config:
+      insecure_skip_verify: false
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'django'
+    scheme: https
+    tls_config:
+      insecure_skip_verify: false
+    metrics_path: '/monitoring/metrics/'
+    static_configs:
+      - targets: ['backend:8000']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: 'fastapi'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:8000']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'http_(requests|responses)_total'
+        action: keep
+
+  - job_name: 'api_endpoints'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:8000']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'api_(calls|time)_(total|seconds)'.*
+        action: keep
+
+  - job_name: 'vapi_metrics'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:8000']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'vapi_(calls|credits)_total'
+        action: keep
+
+  - job_name: 'pulsar'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['pulsar-client:8000']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'pulsar_.*'
+        action: keep
+
+  - job_name: 'pulsar_metrics'
+    static_configs:
+      - targets: ['pulsar-broker:8080']
+    metrics_path: '/metrics'
+
+  - job_name: 'pulsar_consumer'
+    static_configs:
+      - targets: ['localhost:8000']  # Update with your consumer metrics port
+    metrics_path: '/metrics'
