@@ -1,0 +1,60 @@
+graph TD
+    subgraph BackendApplication
+        direction LR
+        B1[config.py: Settings Enable Port Labels] --> B2;
+        B3[metrics.py: Define Counters Histograms Gauges] --> B4;
+        B2[Code Uses Config] --> B4[Code Uses Metrics Inc Set Observe];
+        B4 --> B5[middleware.py: Collects Metrics];
+        B5 --> B6[Exposes /metrics Endpoint];
+    end
+
+    subgraph PrometheusServerSetup
+        direction LR
+        P1[prometheus.yml: Main Config] --> P2{Scrape Configs};
+        P1 --> P3{Rule Files};
+        P1 --> P4{Alerting Config};
+        P3 --> P5[Load rules/*.yml];
+        P4 --> P6[Configure Alertmanager Target];
+    end
+
+    subgraph RuleFiles
+        direction TB
+        R1[rules/alerts.yml: HTTP Latency Errors]
+        R2[rules/credits.yml: Credit Usage Low Credit]
+        R3[rules/pulsar_alerts.yml: Pulsar Specific]
+        R4[rules/redis_alerts.yml: Redis Specific]
+    end
+
+    subgraph UserActions
+        direction TB
+        U1[Add New Metric] --> U2[Edit metrics.py];
+        U2 --> B3;
+        U3[Add New Alert Rule] --> U4[Edit rules/*.yml file];
+        U4 --> P5;
+        U5[Troubleshoot] --> U6{Check /metrics Endpoint};
+        U5 --> U7{Check Prometheus UI Queries Targets};
+        U5 --> P1;
+        U6 --> B6;
+        U7 --> PS;
+    end
+
+    A[Start: Setup Monitoring] --> B1;
+    A --> B3;
+    A --> P1;
+
+    B6 -- Metrics Data --> PS[Prometheus Server];
+    P2 -- Scrape Target --> B6;
+    P5 -- Loaded Rules --> PS;
+
+    PS -- Evaluates Rules --> P7{Alert Condition Met?};
+    P7 -- Yes --> P8[Send Alert];
+    P7 -- No --> PS;
+    P8 -- To Alertmanager --> P6;
+
+    PS --> U7;
+
+
+    style BackendApplication fill:#f9f,stroke:#333,stroke-width:2px
+    style PrometheusServerSetup fill:#ccf,stroke:#333,stroke-width:2px
+    style RuleFiles fill:#eee,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+    style UserActions fill:#lightgrey,stroke:#333,stroke-width:1px
