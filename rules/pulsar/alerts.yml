@@ -1,0 +1,130 @@
+groups:
+- name: pulsar_alerts
+  rules:
+  - alert: HighDLQRate
+    expr: rate(pulsar_dlq_messages_total[5m]) > 5
+    for: 10m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High DLQ rate detected ({{ $value }} messages/min)"
+      description: "Pulsar DLQ is receiving {{ $value }} messages per minute"
+
+  - alert: BatchProcessingSlow
+    expr: histogram_quantile(0.9, rate(pulsar_batch_latency_seconds_bucket[5m])) > 2
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Slow batch processing ({{ $value }}s p90)"
+      description: "Pulsar batch processing is slower than expected"
+
+  - alert: HighBatchQueueSize
+    expr: pulsar_batch_queue_size > 1000
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Large batch queue ({{ $value }} messages)"
+      description: "Pulsar batch queue has {{ $value }} pending messages"
+
+  - alert: NoBatchesProcessed
+    expr: rate(pulsar_batches_sent_total[15m]) == 0
+    for: 15m
+    labels:
+      severity: critical
+    annotations:
+      summary: "No batches processed in last 15 minutes"
+      description: "Pulsar batch processing may be stalled"
+
+  - alert: PulsarHighDLQRate
+    expr: rate(pulsar_dlq_messages_total[5m]) > 5
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High DLQ message rate in Pulsar ({{ $labels.original_topic }})"
+      description: "Pulsar DLQ is receiving {{ $value }} messages/min for topic {{ $labels.original_topic }}"
+
+  - alert: PulsarProcessingSlow
+    expr: histogram_quantile(0.9, rate(pulsar_processing_seconds_bucket[5m])) > 2
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Slow message processing in Pulsar ({{ $labels.topic }})"
+      description: "90th percentile processing time is {{ $value }}s for topic {{ $labels.topic }}"
+
+  - alert: PulsarHighRetryRate
+    expr: rate(pulsar_message_retries_total[5m]) > 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High message retry rate in Pulsar ({{ $labels.topic }})"
+      description: "Retry rate is {{ $value }} retries/min for topic {{ $labels.topic }}"
+
+  - alert: PulsarBatchSizeLarge
+    expr: pulsar_batch_size > 10000
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Large Pulsar batch size detected"
+      description: "Current batch size is {{ $value }} messages"
+
+  - alert: PulsarConsumerDown
+    expr: up{job="pulsar_consumer"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Pulsar consumer is down"
+      description: "Pulsar consumer has been down for more than 1 minute"
+
+  - alert: PulsarConsumerBacklogHigh
+    expr: pulsar_consumer_backlog > 5000
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Pulsar consumer backlog"
+      description: "Consumer backlog is {{ $value }} messages, exceeding safe threshold."
+
+  - alert: PulsarProducerErrorRateHigh
+    expr: |
+      increase(pulsar_producer_errors_total[5m])
+      /
+      increase(pulsar_produced_messages_total[5m]) > 0.01
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High Pulsar producer error rate"
+      description: "More than 1% of messages failed to produce in last 5m ({{ $value }})."
+
+  - alert: PulsarCacheMissRatioHigh
+    expr: |
+      increase(pulsar_cache_misses_total[5m])
+      /
+      (
+        increase(pulsar_cache_misses_total[5m])
+        + increase(pulsar_cache_hits_total[5m])
+      ) > 0.2
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Pulsar cache miss ratio"
+      description: "Cache miss ratio exceeded 20% over last 5 minutes ({{ $value }})."
+
+  - alert: PulsarDLQLatencyHigh
+    expr: increase(pulsar_dlq_latency_seconds_sum[5m])
+      /
+      increase(pulsar_dlq_latency_seconds_count[5m]) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High DLQ message latency"
+      description: "Average DLQ message latency >1s over last 5m."

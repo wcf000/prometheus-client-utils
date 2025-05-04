@@ -1,0 +1,27 @@
+- name: valkey_cache_alerts
+  rules:
+    - alert: ValkeyCacheMissRatioHigh
+      expr: |
+        (
+          increase(valkey_cache_misses_total[5m])
+          /
+          (
+            increase(valkey_cache_hits_total[5m])
+            + increase(valkey_cache_misses_total[5m])
+          )
+        ) > 0.2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High VALKEY cache miss ratio"
+        description: "Cache miss ratio for VALKEY operations is >20% over the last 5 minutes ({{ $value }})."
+
+    - alert: ValkeyCacheErrorRateHigh
+      expr: increase(valkey_cache_errors_total[5m]) > 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Errors during VALKEY cache operations"
+        description: "At least one error in VALKEY cache operations over the last 5 minutes."

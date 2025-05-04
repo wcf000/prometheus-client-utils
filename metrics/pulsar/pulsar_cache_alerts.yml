@@ -1,0 +1,28 @@
+- name: pulsar_cache_alerts
+  rules:
+    - alert: PulsarCacheMissRatioHigh
+      expr: |
+        (
+          increase(pulsar_cache_misses_total[5m])
+          /
+          (
+            increase(pulsar_cache_hits_total[5m])
+            + increase(pulsar_cache_misses_total[5m])
+          )
+        ) > 0.2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High Pulsar cache miss ratio"
+        description: "Cache miss ratio for Pulsar operations is >20% over the last 5 minutes ({{ $value }})."
+
+    - alert: PulsarDLQMessageRateHigh
+      expr: |
+        increase(pulsar_dlq_messages[5m]) > 10
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High Pulsar DLQ message rate"
+        description: "More than 10 messages sent to DLQ in the last 5 minutes."

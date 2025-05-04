@@ -1,0 +1,58 @@
+- name: celery_alerts
+  rules:
+    - alert: CeleryTaskFailureRateHigh
+      expr: |
+        (
+          increase(celery_tasks_total{status="failure"}[5m])
+          /
+          increase(celery_tasks_total[5m])
+        ) > 0.1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High Celery task failure rate"
+        description: "More than 10% of Celery tasks are failing over the last 5 minutes ({{ $value }})."
+
+    - alert: CeleryTaskLatencyHigh
+      expr: |
+        histogram_quantile(0.95, sum by (le, task_name) (rate(celery_task_duration_seconds_bucket[5m]))) > 1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High Celery task latency"
+        description: "95th percentile Celery task duration is over 1s for 5m."
+
+    - alert: CeleryTaskRetryRateHigh
+      expr: |
+        (
+          increase(celery_tasks_total{status="retry"}[5m])
+          /
+          increase(celery_tasks_total[5m])
+        ) > 0.05
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High Celery retry rate"
+        description: "More than 5% of Celery tasks are retried over the last 5 minutes ({{ $value }})."
+
+    - alert: CeleryTaskFailureSpike
+      expr: increase(celery_tasks_total{status="failure"}[5m]) > 100
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Celery task failures spike"
+        description: "Over 100 Celery task failures occurred in the last 5 minutes."
+
+    - alert: CeleryTaskLatencyCritical
+      expr: |
+        histogram_quantile(0.99, sum by (le, task_name) (rate(celery_task_duration_seconds_bucket[5m]))) > 2
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Critical Celery task latency"
+        description: "99th percentile Celery task duration exceeds 2s over 5 minutes."
