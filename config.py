@@ -4,10 +4,17 @@ from app.core.config import Settings
 class PrometheusConfig:
     """Prometheus-specific configuration"""
 
-    # Import from main settings
-    ENABLED: bool = Settings.PROMETHEUS_ENABLED
-    PORT: int = Settings.PROMETHEUS_PORT
-    SERVICE_URL: str = Settings.PROMETHEUS_SERVICE_URL
+    @property
+    def ENABLED(self) -> bool:
+        return Settings.monitoring.PROMETHEUS_ENABLED
+
+    @property
+    def PORT(self) -> int:
+        return Settings.monitoring.PROMETHEUS_PORT
+
+    @property
+    def SERVICE_URL(self) -> str:
+        return Settings.monitoring.PROMETHEUS_SERVICE_URL
 
     # Additional configurations
     HEALTH_TIMEOUT: int = 30

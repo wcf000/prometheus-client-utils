@@ -7,7 +7,7 @@ from prometheus_client import Counter, Histogram
 from starlette.requests import Request
 from starlette.routing import Match
 
-from app.core.config import settings
+from app.core.prometheus.config import PrometheusConfig
 
 REQUEST_COUNT = Counter(
     "requests_total",
@@ -55,7 +55,7 @@ class PrometheusMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or not settings.PROMETHEUS_ENABLED:
+        if scope["type"] != "http" or not PrometheusConfig.ENABLED:
             return await self.app(scope, receive, send)
 
         request = Request(scope)
