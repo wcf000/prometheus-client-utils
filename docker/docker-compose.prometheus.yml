@@ -1,0 +1,38 @@
+# docker-compose.prometheus.yml
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.48.1 # Pinned version
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      # Mount your prometheus configuration file (read-only)
+      # Verify this path points to your actual prometheus.yml
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Mount volume for Prometheus data storage
+      - prometheus-data:/prometheus
+    ports:
+      # Expose Prometheus UI/API port
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      # Optional flags for easier management:
+      - '--web.enable-lifecycle' # Allows config reload via HTTP POST
+      - '--web.enable-admin-api' # Enables admin features
+      - '--storage.tsdb.retention.time=30d' # Example: Set retention period
+    networks:
+      # Needs to reach scrape targets (cadvisor, redis-exporter, backend?, etc.)
+      - app-network
+    # depends_on: # Cannot depend on services in external files
+    #   - cadvisor
+    #   - redis-exporter
+
+networks:
+  app-network:
+    external: true # Assume network created elsewhere
+
+volumes:
+  prometheus-data:
+    # Define volume used by Prometheus
