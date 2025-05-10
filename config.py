@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field, ConfigDict
 from typing import Any
-import os
 
-class PrometheusConfig(BaseModel):
+from pydantic import ConfigDict, Field
+from pydantic_settings import BaseSettings
+
+
+class PrometheusConfig(BaseSettings):
     """
     Prometheus-specific configuration with env support (Pydantic v2).
     All fields can be overridden by environment variables.
