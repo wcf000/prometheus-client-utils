@@ -3,52 +3,13 @@ Prometheus metrics middleware for FastAPI
 """
 import time
 
-from prometheus_client import Counter, Histogram
 from starlette.requests import Request
 from starlette.routing import Match
 
 from app.core.prometheus.config import PrometheusConfig
+from app.core.prometheus.metrics import get_request_count, get_request_latency
 
-REQUEST_COUNT = Counter(
-    "requests_total",
-    "Total requests by method, path and status",
-    ["method", "path", "status_code"]
-)
-
-REQUEST_TIME = Histogram(
-    "request_duration_seconds",
-    "Request duration by method and path",
-    ["method", "path"]
-)
-
-CREDITS_USED = Counter(
-    "credits_used_total",
-    "Credits used by user and type",
-    ["user_id", "credit_type"]
-)
-
-VAPI_CALLS = Counter(
-    'vapi_calls_total',
-    'VAPI calls by endpoint',
-    ['endpoint', 'method', 'status']
-)
-
-VAPI_CREDITS = Counter(
-    'vapi_credits_total',
-    'Credits used by endpoint',
-    ['endpoint', 'user_tier']
-)
-
-STRIPE_CALLS = Counter(
-    'stripe_api_calls_total', 
-    'Total Stripe API calls',
-    ['method', 'endpoint', 'status']
-)
-STRIPE_LATENCY = Histogram(
-    'stripe_api_latency_seconds',
-    'Stripe API call latency',
-    ['method', 'endpoint']
-)
+# CREDITS_USED, VAPI_CALLS, VAPI_CREDITS, STRIPE_CALLS, STRIPE_LATENCY can remain for now, but REQUEST_COUNT and REQUEST_TIME are now accessed via their getter functions.
 
 class PrometheusMiddleware:
     def __init__(self, app):
@@ -64,18 +25,18 @@ class PrometheusMiddleware:
 
         if path.startswith('/vapi/'):
             endpoint = path.split('/')[2]  # Get endpoint type (voice, assistants, etc)
-            with REQUEST_TIME.labels(method, path).time():
+            with get_request_latency().labels(method, path).time():
                 response = await self.app(scope, receive, send)
                 VAPI_CALLS.labels(endpoint, method, response.status_code).inc()
-                REQUEST_COUNT.labels(method, path, response.status_code).inc()
+                get_request_count().labels(method, path, response.status_code).inc()
                 return response
         elif path.startswith('/stripe'):
             await self.dispatch(request, self.app)
             return
         else:
-            with REQUEST_TIME.labels(method, path).time():
+            with get_request_latency().labels(method, path).time():
                 response = await self.app(scope, receive, send)
-                REQUEST_COUNT.labels(method, path, response.status_code).inc()
+                get_request_count().labels(method, path, response.status_code).inc()
                 return response
 
     async def dispatch(self, request: Request, call_next):
