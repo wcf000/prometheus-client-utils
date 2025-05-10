@@ -14,19 +14,19 @@ import pytest
 import requests
 from locust import HttpUser, between, task
 
-from app.core.prometheus.config import PrometheusConfig
+from app.core.prometheus.config import get_prometheus_config
 
 
 class PrometheusScraper(HttpUser):
     """Simulates metric scraping traffic"""
 
     wait_time = between(0.1, 0.5)
-    host = PrometheusConfig.SERVICE_URL
+    host = get_prometheus_config().SERVICE_URL
 
     @task
     def scrape_metrics(self):
         with self.client.get(
-            "/metrics", catch_response=True, timeout=PrometheusConfig.HEALTH_TIMEOUT
+            "/metrics", catch_response=True, timeout=get_prometheus_config().HEALTH_TIMEOUT
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Status {response.status_code}")

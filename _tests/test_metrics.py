@@ -11,7 +11,7 @@ Tests:
 import pytest
 from prometheus_client.parser import text_string_to_metric_families
 
-from app.core.prometheus.config import PrometheusConfig
+from app.core.prometheus.config import get_prometheus_config
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def test_metric_naming_conventions():
     metrics = []  # Replace with actual metrics collection
 
     for metric in metrics:
-        assert metric.name.startswith(PrometheusConfig.METRICS_PREFIX), (
+        assert metric.name.startswith(get_prometheus_config().METRICS_PREFIX), (
             f"Metric {metric.name} missing prefix"
         )
         assert "_" in metric.name, "Metrics should use underscore notation"

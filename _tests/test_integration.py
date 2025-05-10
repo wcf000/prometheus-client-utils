@@ -15,14 +15,14 @@ import requests
 from prometheus_client.parser import text_string_to_metric_families
 from requests.exceptions import RequestException
 
-from app.core.prometheus.config import PrometheusConfig
+from app.core.prometheus.config import get_prometheus_config
 
 
 @pytest.mark.integration
 def test_metrics_endpoint(prometheus_service):
     """Verify metrics endpoint returns valid metrics"""
     max_retries = 3
-    timeout = PrometheusConfig.HEALTH_TIMEOUT
+    timeout = get_prometheus_config().HEALTH_TIMEOUT
     metrics_url = f"{prometheus_service}/metrics"
 
     for attempt in range(max_retries):
@@ -58,7 +58,7 @@ def test_metrics_endpoint(prometheus_service):
 def test_alerts_endpoint(prometheus_service):
     """Verify alerts endpoint returns valid data"""
     response = requests.get(
-        f"{prometheus_service}/api/v1/alerts", timeout=PrometheusConfig.HEALTH_TIMEOUT
+        f"{prometheus_service}/api/v1/alerts", timeout=get_prometheus_config().HEALTH_TIMEOUT
     )
     assert response.status_code == 200
     assert "data" in response.json(), "Invalid alerts response format"

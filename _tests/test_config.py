@@ -11,7 +11,7 @@ Validates:
 
 from urllib.parse import urlparse
 
-from app.core.prometheus.config import PrometheusConfig
+from app.core.prometheus.config import get_prometheus_config, PrometheusConfig
 
 
 def test_config_attributes_exist():
@@ -25,10 +25,10 @@ def test_config_attributes_exist():
         "SCRAPE_INTERVAL": int,
         "DEFAULT_LABELS": dict,
     }
-
+    config = get_prometheus_config()
     for attr, attr_type in required_attrs.items():
-        assert hasattr(PrometheusConfig, attr), f"Missing required attribute: {attr}"
-        assert isinstance(getattr(PrometheusConfig, attr), attr_type), (
+        assert hasattr(config, attr), f"Missing required attribute: {attr}"
+        assert isinstance(getattr(config, attr), attr_type), (
             f"{attr} should be {attr_type.__name__}"
         )
 

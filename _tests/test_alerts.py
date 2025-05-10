@@ -10,7 +10,7 @@ Tests:
 
 import os
 
-from app.core.prometheus.config import PrometheusConfig
+from app.core.prometheus.config import get_prometheus_config, PrometheusConfig
 
 
 def test_config_structure():
@@ -24,39 +24,40 @@ def test_config_structure():
         "SCRAPE_INTERVAL": int,
         "DEFAULT_LABELS": dict,
     }
-
+    config = get_prometheus_config()
     for attr, attr_type in required_attrs.items():
-        assert hasattr(PrometheusConfig, attr), f"Missing config attribute: {attr}"
-        assert isinstance(getattr(PrometheusConfig, attr), attr_type), (
+        assert hasattr(config, attr), f"Missing config attribute: {attr}"
+        assert isinstance(getattr(config, attr), attr_type), (
             f"Invalid type for {attr}, expected {attr_type}"
         )
 
 
 def test_environment_overrides():
     """Verify environment variables override defaults"""
-    original_enabled = PrometheusConfig.ENABLED
-    original_port = PrometheusConfig.PORT
+    from importlib import reload
+    import app.core.prometheus.config as prom_config_mod
+
+    orig_enabled = get_prometheus_config().ENABLED
+    orig_port = get_prometheus_config().PORT
 
     try:
         os.environ["PROMETHEUS_ENABLED"] = "false"
         os.environ["PROMETHEUS_PORT"] = "9999"
 
-        # Re-import to get fresh config with new env vars
-        from importlib import reload
-        from app.core.prometheus import config
+        # Reset singleton and reload config to pick up env changes
+        if hasattr(prom_config_mod, '_prometheus_config_instance'):
+            prom_config_mod._prometheus_config_instance = None
+        config = prom_config_mod.get_prometheus_config()
 
-        reload(config)
-
-        assert config.PrometheusConfig.ENABLED is False
-        assert config.PrometheusConfig.PORT == 9999
+        assert config.ENABLED is False
+        assert config.PORT == 9999
     finally:
-        # Clean up
         os.environ.pop("PROMETHEUS_ENABLED", None)
         os.environ.pop("PROMETHEUS_PORT", None)
         # Restore original values
-        from app.core.prometheus import config
+        if hasattr(prom_config_mod, '_prometheus_config_instance'):
+            prom_config_mod._prometheus_config_instance = None
 
-        reload(config)
 
 
 def test_default_labels():
