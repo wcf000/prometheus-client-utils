@@ -20,8 +20,10 @@ def prometheus_service():
     Ensure Prometheus container is running for tests.
     If not running, start it via docker-compose. Wait for readiness, yield base_url, and clean up if started.
     """
-    base_url = PrometheusConfig.SERVICE_URL
-    timeout = PrometheusConfig.HEALTH_TIMEOUT
+    from app.core.prometheus.config import get_prometheus_config
+    base_url = get_prometheus_config().SERVICE_URL
+    timeout = get_prometheus_config().HEALTH_TIMEOUT
+    # Correct path: app/core/prometheus/docker/docker-compose.prometheus.yml
     compose_file = os.path.join(os.path.dirname(__file__), "..", "docker", "docker-compose.prometheus.yml")
     compose_file = os.path.abspath(compose_file)
     container_name = "prometheus"

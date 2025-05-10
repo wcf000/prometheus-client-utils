@@ -9,7 +9,8 @@ services:
     volumes:
       # Mount your prometheus configuration file (read-only)
       # Verify this path points to your actual prometheus.yml
-      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Use local config for development/testing
+      - ./prometheus.local.yml:/etc/prometheus/prometheus.yml:ro
       # Mount volume for Prometheus data storage
       - prometheus-data:/prometheus
     ports:
