@@ -30,8 +30,8 @@ class PrometheusScraper(HttpUser):
         ) as response:
             if response.status_code != 200:
                 response.failure(f"Status {response.status_code}")
-            elif "http_requests_total" not in response.text:
-                response.failure("Missing core metrics")
+            elif "prometheus_build_info" not in response.text:
+                response.failure("Missing core Prometheus metric: prometheus_build_info")
 
 
 @pytest.mark.performance

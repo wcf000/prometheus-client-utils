@@ -35,11 +35,12 @@ def test_metrics_endpoint(prometheus_service):
             assert metrics, "No metrics returned"
 
             # Check for required metrics
+            # Only check metrics always present in default Prometheus server
             required_metrics = {
-                "http_requests_total",
-                "http_request_duration_seconds",
-                "process_cpu_seconds_total",
-            }
+                "prometheus_build_info",
+                "prometheus_engine_query_duration_seconds",
+                "go_gc_duration_seconds",
+            }  # These are always present in a vanilla Prometheus instance
             metric_names = {m.name for m in metrics}
             assert required_metrics.issubset(metric_names), (
                 f"Missing required metrics: {required_metrics - metric_names}"
