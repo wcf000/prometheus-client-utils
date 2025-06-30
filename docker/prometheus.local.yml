@@ -6,6 +6,12 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'prometheus'
+  - job_name: 'fastapi-backend'
+    metrics_path: /api/v1/metrics
     static_configs:
-      - targets: ['localhost:9090']
+      # Use host.docker.internal to allow the Prometheus container to scrape the backend running on the host
+      - targets: ['host.docker.internal:8000']
+
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8889']

@@ -1,0 +1,5 @@
+5
+bookieHost: "172.22.0.4:3181"
+journalDir: "/pulsar/data/bookkeeper/journal"
+ledgerDirs: "1\t/pulsar/data/bookkeeper/ledgers"
+instanceId: "195c7a1e-306e-44ad-a5b5-c270aa2a733c"

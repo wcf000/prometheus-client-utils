@@ -18,6 +18,15 @@ _celery_cache_sets = None
 _celery_cache_deletes = None
 _system_cpu_usage = None
 
+# DB metrics
+_db_count = None
+_db_latency = None
+_connection_metrics = None
+
+# Event metrics
+_event_count = None
+_event_latency = None
+
 def get_metric_registry():
     global _metric_registry
     if _metric_registry is None:
@@ -30,7 +39,7 @@ def get_request_count():
         _request_count = Counter(
             'http_requests_total',
             'Total HTTP Requests',
-            ['method', 'status'],
+            ['method', 'endpoint', 'status'],
             registry=get_metric_registry()
         )
     return _request_count
@@ -41,7 +50,7 @@ def get_request_latency():
         _request_latency = Histogram(
             'http_request_duration_seconds',
             'HTTP request latency',
-            ['method', 'endpoint'],
+            ['method', 'endpoint', 'status'],
             registry=get_metric_registry()
         )
     return _request_latency
@@ -122,6 +131,64 @@ def get_system_cpu_usage():
         )
     return _system_cpu_usage
 
+# Database metrics
+def get_db_count():
+    global _db_count
+    if _db_count is None:
+        _db_count = Counter(
+            'db_operations_total',
+            'Database operations (queries, commits, rollbacks)',
+            ['operation'],
+            registry=get_metric_registry()
+        )
+    return _db_count
+
+def get_db_latency():
+    global _db_latency
+    if _db_latency is None:
+        _db_latency = Histogram(
+            'db_operation_duration_seconds',
+            'Database operation latency in seconds',
+            registry=get_metric_registry(),
+            buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0)
+        )
+    return _db_latency
+
+def get_connection_metrics():
+    global _connection_metrics
+    if _connection_metrics is None:
+        _connection_metrics = Gauge(
+            'db_connections',
+            'Database connection metrics',
+            ['db_type', 'state'],
+            registry=get_metric_registry()
+        )
+    return _connection_metrics
+
+# Event metrics
+def get_event_count():
+    global _event_count
+    if _event_count is None:
+        _event_count = Counter(
+            'events_total',
+            'Total events published or consumed',
+            ['topic', 'result'],
+            registry=get_metric_registry()
+        )
+    return _event_count
+
+def get_event_latency():
+    global _event_latency
+    if _event_latency is None:
+        _event_latency = Histogram(
+            'event_operation_duration_seconds',
+            'Event operation latency in seconds',
+            ['topic'],
+            registry=get_metric_registry(),
+            buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0)
+        )
+    return _event_latency
+
 # todo: Refactor remaining metrics below to use the same singleton getter pattern.
 
 # Pulsar cache metrics (singleton getter pattern)
@@ -170,117 +237,60 @@ def get_pulsar_cache_deletes():
         )
     return _pulsar_cache_deletes
 
+# Unified cache metrics for Redis/Valkey
+# Counter for cache operations
+_cache_count = None
+_cache_latency = None
 
-# VALKEY cache metrics (singleton getter pattern)
-_redis_cache_hits = None
-_redis_cache_misses = None
-_redis_cache_sets = None
-_redis_cache_deletes = None
-_redis_cache_errors = None
-
-def get_redis_cache_hits():
-    global _redis_cache_hits
-    if _redis_cache_hits is None:
-        _redis_cache_hits = Counter(
-            'redis_cache_hits_total',
-            'Number of cache hits for Redis operations',
+def get_cache_count():
+    global _cache_count
+    if _cache_count is None:
+        _cache_count = Counter(
+            'cache_operations_total',
+            'Cache operations (hit/miss/set/delete) for Redis/Valkey',
+            ['cache_type', 'operation'],
             registry=get_metric_registry()
         )
-    return _redis_cache_hits
+    return _cache_count
 
-def get_redis_cache_misses():
-    global _redis_cache_misses
-    if _redis_cache_misses is None:
-        _redis_cache_misses = Counter(
-            'redis_cache_misses_total',
-            'Number of cache misses for Redis operations',
+def get_cache_latency():
+    global _cache_latency
+    if _cache_latency is None:
+        _cache_latency = Histogram(
+            'cache_operation_duration_seconds',
+            'Cache operation latency in seconds for Redis/Valkey',
+            ['cache_type', 'operation'],
             registry=get_metric_registry()
         )
-    return _redis_cache_misses
+    return _cache_latency
 
-def get_redis_cache_sets():
-    global _redis_cache_sets
-    if _redis_cache_sets is None:
-        _redis_cache_sets = Counter(
-            'redis_cache_sets_total',
-            'Number of cache sets for Redis operations',
+# Deprecated: Moved to app.core.pulsar.metrics
+# Import the proper one from there instead
+# This is kept here temporarily for backward compatibility
+# PULSAR_CONSUMER_LAG = Gauge(...)
+
+# Cache hit rate metrics for Redis/Valkey
+_cache_hit_ratio = None
+
+def get_cache_hit_ratio():
+    """Get cache hit ratio gauge (hits / (hits + misses))"""
+    global _cache_hit_ratio
+    if _cache_hit_ratio is None:
+        _cache_hit_ratio = Gauge(
+            'cache_hit_ratio',
+            'Cache hit ratio (hits / (hits + misses)) for Redis/Valkey',
+            ['cache_type'],
             registry=get_metric_registry()
         )
-    return _redis_cache_sets
+    return _cache_hit_ratio
 
-def get_redis_cache_deletes():
-    global _redis_cache_deletes
-    if _redis_cache_deletes is None:
-        _redis_cache_deletes = Counter(
-            'redis_cache_deletes_total',
-            'Number of cache deletes for Redis operations',
-            registry=get_metric_registry()
-        )
-    return _redis_cache_deletes
-
-def get_redis_cache_errors():
-    global _redis_cache_errors
-    if _redis_cache_errors is None:
-        _redis_cache_errors = Counter(
-            'redis_cache_errors_total',
-            'Number of errors during Redis cache operations',
-            registry=get_metric_registry()
-        )
-    return _redis_cache_errors
-
-# VALKEY cache metrics (singleton getter pattern)
-_valkey_cache_hits = None
-_valkey_cache_misses = None
-_valkey_cache_sets = None
-_valkey_cache_deletes = None
-_valkey_cache_errors = None
-
-def get_valkey_cache_hits():
-    global _valkey_cache_hits
-    if _valkey_cache_hits is None:
-        _valkey_cache_hits = Counter(
-            'valkey_cache_hits_total',
-            'Number of cache hits for VALKEY operations',
-            registry=get_metric_registry()
-        )
-    return _valkey_cache_hits
-
-def get_valkey_cache_misses():
-    global _valkey_cache_misses
-    if _valkey_cache_misses is None:
-        _valkey_cache_misses = Counter(
-            'valkey_cache_misses_total',
-            'Number of cache misses for VALKEY operations',
-            registry=get_metric_registry()
-        )
-    return _valkey_cache_misses
-
-def get_valkey_cache_sets():
-    global _valkey_cache_sets
-    if _valkey_cache_sets is None:
-        _valkey_cache_sets = Counter(
-            'valkey_cache_sets_total',
-            'Number of cache sets for VALKEY operations',
-            registry=get_metric_registry()
-        )
-    return _valkey_cache_sets
-
-def get_valkey_cache_deletes():
-    global _valkey_cache_deletes
-    if _valkey_cache_deletes is None:
-        _valkey_cache_deletes = Counter(
-            'valkey_cache_deletes_total',
-            'Number of cache deletes for VALKEY operations',
-            registry=get_metric_registry()
-        )
-    return _valkey_cache_deletes
-
-def get_valkey_cache_errors():
-    global _valkey_cache_errors
-    if _valkey_cache_errors is None:
-        _valkey_cache_errors = Counter(
-            'valkey_cache_errors_total',
-            'Number of errors during VALKEY cache operations',
-            registry=get_metric_registry()
-        )
-    return _valkey_cache_errors
+# Grafana queries (examples):
+# API performance: rate(http_requests_total[5m]) by (method, endpoint, status)
+# API latency: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, method, endpoint, status))
+# Cache hit/miss: sum(rate(cache_operations_total{operation=~"hit|miss"}[5m])) by (cache_type, operation)
+# Pulsar consumer lag: max(pulsar_consumer_lag_seconds) by (topic, subscription)
+# Pulsar producer: rate(pulsar_messages_sent[5m]) by (topic)
+# Pulsar consumer: rate(pulsar_messages_received[5m]) by (topic)
+# DB latency: histogram_quantile(0.95, sum(rate(db_operation_duration_seconds_bucket[5m])) by (le))
+# DB connections: sum(db_connections) by (db_type, state)
+# Event publish: rate(events_total{result="success"}[5m]) by (topic)
